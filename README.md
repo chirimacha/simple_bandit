@@ -13,7 +13,7 @@ The code folder contains 5 programs. The program "runGlobalVsBanditSimulations.R
 2) bandit.R: Bandit functions
 3) highLevelSearchAlgos.R: General search algorithms and bandit wrapper for search algorithms
 4) FunctionsForSimulatedSearch.R: Functions used to simulate searches and compare bandit against benchmark search algorithms
-5)runGlobalVsBanditSimulations.R: Prototype for setting up and running experiments
+5) runGlobalVsBanditSimulations.R: Prototype for setting up and running experiments
 
 
 
