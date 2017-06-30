@@ -36,11 +36,14 @@ source("code/highLevelSearchAlgos.R")
 ###' @params.grid = infestation and search parameters [see below for specific parameters to be set]
 ###' @params.arm = parameters for each arm of the bandit [these arms are then combined to make the global search]
 ###' @num.replications = number of times to repeat the experiment (i.e. compare bandit and global search)
+###' @SearchStrategy = strategy used to search with bandit algorithm (right now RingSearch or RandomSearch)
+###' @AltAlgo= strategy used to search as benchmark (right now either RingSearch or RandomSearch)
+###' @RewardFunction = Reward function for bandit (right now either BugReward = log10(1+bugs) or HouseReward = binary 1,0)
 ###' @cpu.cores.needed = 1 for serial, and > 1 for parallel
 ZCompareGlobalVsBandit <- function(params.bandit, bandit.time, bandit.block.size, 
                                                 params.grid,  params.arm, num.replications,
                                                 SearchStrategy,
-                                                altAlgo, cpu.cores.needed=1) {
+                                                altAlgo, RewardFunction,cpu.cores.needed=1) {
   compareAllReplications <- c()
   if(cpu.cores.needed==1) {
     for (r in seq(num.replications)) {
@@ -50,7 +53,8 @@ ZCompareGlobalVsBandit <- function(params.bandit, bandit.time, bandit.block.size
                                                  bandit.block.size=bandit.block.size, 
                                                  params.grid=params.grid,  
                                                  params.arm=params.arm,
-                                                 SearchStrategy=SearchStrategy,
+                                                 SearchStrategy=SearchStrategy, 
+                                                 RewardFunction,
                                                  altAlgo = altAlgo) 
         
         compareAllReplications <- rbind(compareAllReplications, compare)
@@ -72,6 +76,7 @@ ZCompareGlobalVsBandit <- function(params.bandit, bandit.time, bandit.block.size
                                     params.grid=params.grid,  
                                     params.arm=params.arm,
                                     SearchStrategy=SearchStrategy,
+                                    RewardFunction,
                                     altAlgo = altAlgo                                                                                    
     )})    
     sfStop()
@@ -88,8 +93,8 @@ ZCompareGlobalVsBandit <- function(params.bandit, bandit.time, bandit.block.size
 ##' Generate single landscape and run the algorithm
 ZCompareGlobalVsBandit_Helper <- function(params.bandit, bandit.time, bandit.block.size, 
                                    params.grid,  params.arm,
-                                   SearchStrategy,
-                                   altAlgo) {
+                                   SearchStrategy, 
+                                   altAlgo, RewardFunction) {
   infestations<- lapply(params.arm, GenerateInfestation, params=params.grid)  
   stopifnot(bandit.time * bandit.block.size <= prod(dim(infestations[[1]]))*length(infestations)/2)
   
@@ -98,7 +103,8 @@ ZCompareGlobalVsBandit_Helper <- function(params.bandit, bandit.time, bandit.blo
                                               infestations=infestations,
                                               block.size=bandit.block.size,
                                               params.bandit=params.bandit,
-                                              SearchStrategy=SearchStrategy)
+                                              SearchStrategy=SearchStrategy,
+                                              RewardFunction = RewardFunction)
   banditBlockSearch.stats <- tail(banditBlockSearch$results,1)
 
   print("B: alternative algorithm search..")
@@ -227,7 +233,7 @@ ZGraphResults2D <- function(data, params.grid, params.arm, searches) {
 #Optional functions that are used to see how the bandit changes with changing sensitivity in arms
 ZScanSensitivityGlobalVsBandit <- function(params.bandit, bandit.time, bandit.block.size, 
                                            params.grid,  params.arms.static, params.arms.dynamic,
-                                           num.replications,
+                                           num.replications,  RewardFunction,
                                            altAlgo = RingSearch) {
   
   overallResults <- c()
@@ -239,6 +245,7 @@ ZScanSensitivityGlobalVsBandit <- function(params.bandit, bandit.time, bandit.bl
                            params.grid,  params.arms,
                            num.replications,
                            altAlgo = RingSearch,
+                           RewardFunction,
                            cpu.cores.needed=4)
     banditBlockSearch.sensitivity <- (res$compare$banditBlockSearch.housesfound/res$compare$GENERAL.housesinfested)
     globalSearch.sensitivity      <- (res$compare$globalSearch.housesfound     /res$compare$GENERAL.housesinfested)
@@ -274,7 +281,8 @@ ZScanSensitivityGlobalVsBanditParallel <- function(params.bandit, bandit.time, b
     params.arms[[armNameDynamic]] <- prev
     res <- ZCompareGlobalVsBandit(params.bandit, bandit.time, bandit.block.size, 
                                   params.grid,  params.arms,
-                                  num.replications,
+                                  num.replications,  
+                                  RewardFunction = RewardFunction,
                                   altAlgo = RingSearch,
                                   cpu.cores.needed=1)
     banditBlockSearch.sensitivity <- (res$compare$banditBlockSearch.housesfound/res$compare$GENERAL.housesinfested)

@@ -20,25 +20,11 @@ library(ggplot2)
 library(pROC)
 library(sm)
 
-
-if(Sys.getenv("SIMPLE_BANDIT") != "") {
-  setwd(paste(Sys.getenv("SIMPLE_BANDIT"), "/code", sep=""))  
-} else if(Sys.getenv("USER") == "sgutfraind") {
-  setwd("/Users/sgutfraind/academic/chagas/bandit/code")
-} else if(Sys.getenv("USER") == "sasha") {
-  setwd("/home/sasha/Documents/projects/chagas/shared/Bandit/code")
-} else if(Sys.getenv("USER") == "mlevy") {
-  #TODO: check your USER string (your username on your computer) and add appropriate directory here with 
-  setwd("PATH_TO_BANDIT/code")
-} else if(Sys.getenv("USER") == "rcastillo") {
-  setwd("PATH_TO_BANDIT/code")
-} else if(Sys.getenv("USER") == "snutman") {
-  setwd("PATH_TO_BANDIT/code")
-} 
+setwd(Sys.getenv("SIMPLE_BANDIT"))
 
 #CALL BANDIT CODE - This uses the bandit code created by S. Gutfraind and S. Nutman 
-source("bandit.R")
-source("helperFunctions.R")
+source("code/bandit.R")
+source("code/helperFunctions.R")
 
 ##' Ring Search ("Battleship")
 ##'   1. Randomly selects sites until makes a hit
@@ -191,7 +177,7 @@ RandomSearch <- function(infestation, st=NULL, max_actions=Inf, params=NULL, ran
 #Rewards are log10(1+number of bugs found)
 ##' @params new_st: state of the bandit off of which rewards are being calculated
 ##' @params block.size: number of houses being searched for single pull of bandit
-search_reward <- function(new_st, block.size) {
+BugReward <- function(new_st, block.size) {
   last <- tail(new_st$running_stats$total_bugs, (block.size+1)) #using total_bugs instead of total_found 
   last.reward <- rep(0,block.size)
   for (k in 2:(block.size+1)) {
@@ -205,12 +191,12 @@ search_reward <- function(new_st, block.size) {
 ##' @params new_st: state of the bandit off of which rewards are being calculated
 ##' @params block.size: number of houses being searched for single pull of bandit
 
-house_reward <- function(new_st, block.size) {
+HouseReward <- function(new_st, block.size) {
   last <- tail(new_st$running_stats$total_found, (block.size+1)) #using total_found 
   last.reward <- rep(0,block.size)
   for (k in 2:(block.size+1)) {
     j=k-1
-    last.reward[j] <- log10(1+last[k]-last[j])
+    last.reward[j] <- last[k]-last[j]
   }
   return(last.reward)
 }
@@ -244,13 +230,14 @@ BugsFound <-function(new_st, block.size) {
 ##' each infestation is a rectangular grid
 ##' @params block.size: number of searches conducted each time an arm is pulled
 ##' @params SearchStrategy   strategy used to search (Ring/Random)
+##' @params RewardFunction: function used to calculate rewards for the bandit (takes in new_st, block.size)
 ##' NOTE: this algorithm is designed to run with a UCB1 bandit or an RC bandit. If additional bandit algorithms are added,
 ##' addtional code will be needed to initialize that bandit in this function
 
 BanditSearchGridBlocks <- function(test.time=NULL, params=NULL, 
                                    block.size=NULL, params.bandit=NULL, 
                                    params.arm=NULL, infestations=NULL,
-                                   SearchStrategy=NULL) {
+                                   SearchStrategy=NULL,RewardFunction=NULL) {
   
   #Optionally set up infestations  
   if(is.null(infestations)) {
@@ -315,7 +302,8 @@ BanditSearchGridBlocks <- function(test.time=NULL, params=NULL,
     #print(chosen_arm)
     
     search_stats <- pull_arm(chosen_arm, search_stats,block.size,SearchStrategy)
-    reward       <- search_reward(search_stats[[chosen_arm]],block.size) 
+    reward       <- RewardFunction(search_stats[[chosen_arm]],block.size)
+    #reward function of the form RewardFunction(new_st,block.size) 
     # unfound      <- UnfoundPrevalence(search_stats[[chosen_arm]])
     bug         <- BugsFound(search_stats[[chosen_arm]],block.size)
     
