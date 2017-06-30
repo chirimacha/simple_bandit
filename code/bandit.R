@@ -167,6 +167,60 @@ update_bandit_ucb1 <- function(bandit, chosen_arm, reward) {
   return(bandit)
 }
 
+
+#Epsilon-Greedy bandit
+initialize_greedy <- function(n_arms, epsilon,reward_func) {
+  bandit <- list("name"="egreedy", "n_arms"=n_arms, epsilon=epsilon)
+  bandit$mean_reward <- rep(0, n_arms)
+  
+  if (is.null(reward_func)) {
+    for(arm_idx in seq(n_arms)) {
+      bandit$mean_reward[arm_idx] <- 0
+    }
+  }
+  else {
+    for(arm_idx in seq(n_arms)) {
+      bandit$mean_reward[arm_idx] <- reward_func(arm_idx, n_arms)
+    }
+  }
+  bandit$num_pulls   <- rep(1,n_arms)
+  #print(bandit)
+  return(bandit)
+}
+
+next_arm_greedy <- function(bandit) {
+  p_vals <-probability_arm_greedy(bandit) #probability of best arm is 1-epsilon + epsilon/narms
+  # print(p_vals)
+  chosen_arm <- return(sample.int(bandit$n_arms, size=1, replace=TRUE, prob=p_vals))
+  #cat("best arm: ", best_arm, "\n")
+  return(sample.int(bandit$n_arms, size=1, replace=TRUE, prob=p_vals))
+}
+
+probability_arm_greedy <- function(bandit) {
+  #compute the probability for an arm
+  total_pulls <- sum(bandit$num_pulls)
+  values <- list()
+  p_vals <- c()
+  for(arm_idx in seq(bandit$n_arms)) {
+    values <- c(values, bandit$mean_reward[arm_idx])
+    p_vals <- c(p_vals,bandit$epsilon/bandit$n_arms) #general probability is epsilon/arms
+  }
+  best_arm <- which.max(values)  #in cases of ties, it returns the first arm
+  p_vals[best_arm] <- p_vals[best_arm] +(1-bandit$epsilon) #probability of best arm is 1-epsilon + epsilon/narm
+  return(p_vals)
+}
+
+update_bandit_greedy <- function(bandit, chosen_arm, reward) {
+  #cat("ZZZ:", paste(bandit$num_pulls), "\n")
+  np <- bandit$num_pulls[chosen_arm]
+  bandit$mean_reward[chosen_arm] <- (np*bandit$mean_reward[chosen_arm] + reward)/(np+1)
+  bandit$num_pulls[chosen_arm]   <- np + 1
+  #cat("ZZZ:", paste(bandit$num_pulls), "\n")
+  #cat("ZZZ:", chosen_arm, reward, bandit$mean_reward, "\n")
+  return(bandit)
+}
+
+
 #the test reward function: the reward is stochastic, often 0, and when positive averages
 #U(arm1) = 1
 #U(arm2) = 2
@@ -190,13 +244,15 @@ next_arm <- function(bandit) {
 #returns the randomly-drawn next arm
   if(bandit$name=="rc") {
     return(next_arm_rc(bandit));
-  } else {if (bandit$name=="ucb1") {
-    return(next_arm_ucb1(bandit));
-  } # Add in additional bandits here
-    else {
-    sprintf("Error: cannot call bandit: %s",bandit$name);
-  } }
-}  
+  } else if (bandit$name=="ucb1") {
+      return(next_arm_ucb1(bandit));
+      } else if (bandit$name=="egreedy") {
+          return(next_arm_greedy(bandit));
+          # Add in additional bandits here
+        }  else {
+          sprintf("Error: cannot call bandit: %s",bandit$name);
+        } 
+} 
 
 
 probability_arm <- function(bandit, arm_idx) {
@@ -207,8 +263,12 @@ probability_arm <- function(bandit, arm_idx) {
     return(probability_arm_ucb1(bandit, arm_idx));
   } # Add in additional bandits here
     else {
+      if (bandit$name=="egreedy") {
+        return(probability_arm_greedy(bandit));
+        # Add in additional bandits here
+      }  else {
     sprintf("Error: cannot call bandit: %s",bandit$name);
-  } } 
+  } } }
 }
 
 update_bandit <- function(bandit, chosen_arm, reward) {
@@ -219,7 +279,11 @@ update_bandit <- function(bandit, chosen_arm, reward) {
     return(update_bandit_ucb1(bandit, chosen_arm, reward))
   } # Add in additional bandits here
     else {
+      if (bandit$name=="egreedy") {
+        return(update_bandit_greedy(bandit,chosen_arm,reward));
+        # Add in additional bandits here
+      }  else {
     sprintf("Error: cannot call bandit: %s",bandit$name);
-  } } 
+  } } }
 }  
 

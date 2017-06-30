@@ -262,7 +262,7 @@ BanditSearchGridBlocks <- function(test.time=NULL, params=NULL,
     return(search_stats)
   }
   
-  print("Stochastic search with Reinforcement-Comparison (rc) bandit");
+  print("Stochastic search with bandit");
   
   #Setting up running tables to keep track of searches
   times       <- seq(1,test.time)
@@ -284,8 +284,10 @@ BanditSearchGridBlocks <- function(test.time=NULL, params=NULL,
   }
   else if (params.bandit$name =="ucb1") {
    bandit <- initialize_ucb1(n_arms=n_arms, reward_func=params.bandit$reward_func)
-  } #### Wishlist: add bandit algorithms besides UCB/RC [must also update in "bandit.R"]
-  else {
+  } else if (params.bandit$name=="egreedy") {
+      bandit <-initialize_greedy(n_arms =n_arms, epsilon=params.bandit$epsilon, reward_func=params.bandit$reward_func)
+  #### Wishlist: add bandit algorithms besides UCB/RC/egreedy [must also update in "bandit.R"]
+  } else {
     sprintf("Error: cannot call bandit (Bandit type unknown, not specified) %s",params.bandit$name)
   }
   
