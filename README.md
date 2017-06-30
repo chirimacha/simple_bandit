@@ -9,11 +9,11 @@ Nutman SK, Gutfraind A et al. A BANDIT MODEL TO OPTIMIZE ENTOMOLOGICAL SURVEYS -
 https://github.com/chirimacha/simple_bandit/blob/master/ASTMH.pdf
 
 The code folder contains 5 programs. The program "runGlobalVsBanditSimulations.R" incorporates the other 4 codes
--helperFunctions.R: helper functions that are not specific to a bandit or search 
--bandit.R: Bandit functions
--highLevelSearchAlgos.R: General search algorithms and bandit wrapper for search algorithms
--FunctionsForSimulatedSearch.R: Functions used to simulate searches and compare bandit against benchmark search algorithms
--runGlobalVsBanditSimulations.R: Prototype for setting up and running experiments
+1) helperFunctions.R: helper functions that are not specific to a bandit or search 
+2) bandit.R: Bandit functions
+3) highLevelSearchAlgos.R: General search algorithms and bandit wrapper for search algorithms
+4) FunctionsForSimulatedSearch.R: Functions used to simulate searches and compare bandit against benchmark search algorithms
+5)runGlobalVsBanditSimulations.R: Prototype for setting up and running experiments
 
 
 
